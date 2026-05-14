@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Spartan Sales</string>
+    <string name="title_activity_main">Spartan Sales</string>
+    <string name="package_name">com.spartandoubleglazing.sales</string>
+    <string name="custom_url_scheme">com.spartandoubleglazing.sales</string>
+</resources>

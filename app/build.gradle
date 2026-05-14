@@ -1,0 +1,84 @@
+apply plugin: 'com.android.application'
+
+// Load signing credentials from android/keystore.properties (gitignored).
+// Keeps passwords out of source control. The .example file shows the format.
+// Debug builds and clean checkouts without keystore.properties still build —
+// the signingConfig only applies to the release type.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace = "com.spartandoubleglazing.sales"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.spartandoubleglazing.sales"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            // Only configure when keystore.properties is present — lets clean
+            // checkouts build debug variants without setup. `./gradlew
+            // bundleRelease` will fail with a clear error if it's missing.
+            if (keystorePropertiesFile.exists()) {
+                storeFile     file(keystoreProperties['SPARTAN_KEYSTORE_FILE'])
+                storePassword keystoreProperties['SPARTAN_KEYSTORE_PASSWORD']
+                keyAlias      keystoreProperties['SPARTAN_KEY_ALIAS']
+                keyPassword   keystoreProperties['SPARTAN_KEY_PASSWORD']
+            }
+        }
+    }
+    buildTypes {
+        release {
+            // signingConfig only attaches when keystore.properties exists
+            // (otherwise gradle would fail at config time complaining about
+            // null storeFile). The build itself fails clearly if you try to
+            // bundleRelease without it.
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
