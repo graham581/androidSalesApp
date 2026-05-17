@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+        Allow cleartext HTTP from the Android emulator's host loopback
+        (10.0.2.2) so the dev workflow documented in
+        spartancrm/mobile/README.md works without needing self-signed
+        certs. Everything else still requires HTTPS — release builds
+        load https://spaartan.tech which is unaffected by this config.
+    -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
